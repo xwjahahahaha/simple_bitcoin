@@ -7,6 +7,8 @@ import (
 
 func main() {
 
-	genesisBlock := BLC.CreateGenesisBlcok("cqupt")
-	fmt.Println(genesisBlock)
+	newBlockChain := BLC.CreateNewBC()
+	fmt.Println(newBlockChain)
+	fmt.Println(newBlockChain.Blocks)
+	fmt.Println(newBlockChain.Blocks[0])
 }
