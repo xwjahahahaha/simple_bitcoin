@@ -7,7 +7,7 @@ import (
 )
 
 //int64 => []byte
-func IntToBytes(num int64) []byte {
+func Int64ToBytes(num int64) []byte {
 	buff := new(bytes.Buffer)
 	//BigEndian指定大端小端
 	//binary.Write是将数据的二进制格式写入字节缓冲区中

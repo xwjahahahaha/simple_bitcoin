@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"simple_bitcoin/BLC"
 )
 
@@ -17,9 +16,9 @@ func main() {
 	blockChain.AddNewBlock("a send $1 to b")
 	blockChain.AddNewBlock("a send $2 to b")
 	blockChain.AddNewBlock("a send $3 to b")
-	fmt.Println(blockChain)
-	fmt.Println(blockChain.Blocks)
-	fmt.Println(blockChain.Blocks[2])
+	//fmt.Println(blockChain)
+	//fmt.Println(blockChain.Blocks)
+	//fmt.Println(blockChain.Blocks[2])
 
 
 

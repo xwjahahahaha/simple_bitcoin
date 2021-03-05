@@ -1,9 +1,6 @@
 package BLC
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"strconv"
 	"time"
 )
 
@@ -21,9 +18,11 @@ type Block struct {
 	Timestamp int64
 	//5.本区块的Hash
 	Hash []byte
+	//6.nonce随机值
+	Nonce int64
 }
 
-//1.创建新的区块
+//创建新的区块
 func NewBlock(data string, height int64, preHash []byte) *Block {
 	newBlock := &Block{
 		BlockHeight: height,
@@ -31,26 +30,19 @@ func NewBlock(data string, height int64, preHash []byte) *Block {
 		Data:        []byte(data),
 		Timestamp:   time.Now().Unix(),
 		Hash:        nil,
+		Nonce:  	 0,
 	}
-	newBlock.SetBlockHash()
+	//运行工作量证明计算nonce
+	//为当前区块生成工作量证明对象
+	pow := NewProofOfWork(newBlock)
+	//计算
+	nonce, hash := pow.Run()
+	newBlock.Hash = hash[:]
+	newBlock.Nonce = nonce
 	return newBlock
 }
 
-//2.计算当前区块的Hash
-func (block *Block) SetBlockHash() {
-	//数据类型统一为[]byte
-	height := IntToBytes(block.BlockHeight)
-	//时间戳 => 二进制字符串 => []byte
-	timeStamp := []byte(strconv.FormatInt(block.Timestamp, 2))
-	//合并为二位字符数组切片
-	blockData := bytes.Join([][]byte{height, timeStamp, block.PreHash, block.Data}, []byte{})
-	//求hash,返回256位/32位字节数组
-	hashAry := sha256.Sum256(blockData)
-	//转换为字节数组切片
-	block.Hash = hashAry[:]
-}
-
-//3.生成创世区块
+// 生成创世区块
 func CreateGenesisBlcok(data string) *Block {
 	return NewBlock(data, 0, INIIALLY_HASH)
 }
