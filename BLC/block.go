@@ -39,6 +39,7 @@ func NewBlock(data string, height int64, preHash []byte) *Block {
 	nonce, hash := pow.Run()
 	newBlock.Hash = hash[:]
 	newBlock.Nonce = nonce
+
 	return newBlock
 }
 

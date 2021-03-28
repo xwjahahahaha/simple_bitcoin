@@ -52,6 +52,7 @@ func (pow *ProofOfWork) Run() (int64, []byte) {
 	return nonce, hashBigInt.Bytes()
 }
 
+// 计算函数的区块数据统一化（统一为[]byte）函数
 func (pow *ProofOfWork) PrepareData() []byte {
 	return bytes.Join(
 		[][]byte{
@@ -63,4 +64,21 @@ func (pow *ProofOfWork) PrepareData() []byte {
 	},
 		[]byte{},
 	)
+}
+
+
+// PoW验证函数
+// 验证目标区块是够合法（难度与区块的比对）
+func (pow *ProofOfWork) IsValid() bool {
+	// 转换区块Hash为big.Int
+	blockHash := new(big.Int)
+	blockHash.SetBytes(pow.Block.Hash)
+	// 比较
+	//	 -1 if x <  y
+	//    0 if x == y
+	//   +1 if x >  y
+	if pow.Target.Cmp(blockHash) > 0 {
+		return true
+	}
+	return false
 }

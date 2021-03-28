@@ -1,6 +1,8 @@
 package BLC
 
-import "simple_bitcoin/utils"
+import (
+	"simple_bitcoin/utils"
+)
 
 //区块链数据结构
 type BlockChain struct {
