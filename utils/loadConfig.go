@@ -11,7 +11,11 @@ var (
 	TargetBit uint		// 难度
 	HashDigits uint
 
+	DBName string
+	BucketName string
+	LastHashKey string
 )
+
 
 func init()  {
 	file, err := ini.Load("./config.ini")
@@ -20,6 +24,7 @@ func init()  {
 	}
 	LoadBlockChainConfig(file)
 	LoadConsensus(file)
+	LoadDataBase(file)
 }
 
 func LoadBlockChainConfig(file *ini.File)  {
@@ -30,4 +35,10 @@ func LoadBlockChainConfig(file *ini.File)  {
 func LoadConsensus(file *ini.File)  {
 	TargetBit = file.Section("pow").Key("TargetBit").MustUint(16)
 	HashDigits = file.Section("pow").Key("HashDigits").MustUint(256)
+}
+
+func LoadDataBase(file *ini.File)  {
+	DBName = file.Section("database").Key("DBName").MustString("simpleCoin")
+	BucketName = file.Section("database").Key("BucketName").MustString("simpleBucket")
+	LastHashKey = file.Section("database").Key("LastHashKey").MustString("LastHash")
 }
