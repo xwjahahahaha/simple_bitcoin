@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	GenesisString string
+	GenesisCoinbaseData string
 
 	TargetBit uint		// 难度
 	HashDigits uint
@@ -28,8 +28,7 @@ func init()  {
 }
 
 func LoadBlockChainConfig(file *ini.File)  {
-	GenesisString = file.Section("genesis").Key("GenesisString").MustString("genesis")
-
+	GenesisCoinbaseData = file.Section("genesis").Key("GenesisCoinbaseData").MustString("The Times 03/Jan/2009 Chancellor on brink of second bailout for banks")
 }
 
 func LoadConsensus(file *ini.File)  {

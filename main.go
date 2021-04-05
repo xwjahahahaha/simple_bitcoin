@@ -14,7 +14,9 @@ func main() {
 
 
 	//添加新区块
-	//blockChain.AddNewBlock("a send $1 to b")
+	blockChain.AddNewBlock("a send $1 to b")
+	blockChain.AddNewBlock("a send $2 to b")
+	blockChain.AddNewBlock("a send $3 to b")
 
-
+	blockChain.PrintBlockChain()
 }

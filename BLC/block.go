@@ -8,7 +8,7 @@ import (
 )
 
 //创世块初始Hash
-var INIIALLY_HASH = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var INITIALLY_HASH = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 type Block struct {
 	//1.区块高度
@@ -48,7 +48,7 @@ func NewBlock(data string, height int64, preHash []byte) *Block {
 
 // 生成创世区块
 func CreateGenesisBlcok(data string) *Block {
-	return NewBlock(data, 0, INIIALLY_HASH)
+	return NewBlock(data, 0, INITIALLY_HASH)
 }
 
 
@@ -72,4 +72,18 @@ func Deserialization(blockBytes []byte) *Block {
 		fmt.Println("Deserialization err : ", err)
 	}
 	return &block
+}
+
+// 区块信息打印
+func (block *Block)BlockChainStdOutPrint()  {
+	// 输出，这里只是标准stdout，可以改为其他输出
+	fmt.Printf("================================================================================================\n")
+	fmt.Printf("前区块hash值：%x\n", block.BlockHeight)
+	fmt.Printf("本区块hash值：%x\n", block.PreHash)
+	fmt.Printf("梅克尔根：%x\n", block.Data)
+	//转换下时间
+	timeFormat := time.Unix(block.Timestamp, 0).Format("2006-01-02 15:04:05")
+	fmt.Printf("本区块时间：%s\n", timeFormat)
+	fmt.Printf("本区块随机数Nonce：%d\n", block.Nonce)
+	fmt.Printf("================================================================================================\n")
 }

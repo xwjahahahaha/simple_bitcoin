@@ -18,5 +18,3 @@ func Int64ToBytes(num int64) []byte {
 	return buff.Bytes()
 }
 
-
-// serialize
