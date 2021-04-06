@@ -1,0 +1,4 @@
+rm ./btc
+rm simpleCoin*
+go build -o btc
+./btc

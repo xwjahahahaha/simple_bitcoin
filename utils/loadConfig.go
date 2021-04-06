@@ -11,9 +11,14 @@ var (
 	TargetBit uint		// 难度
 	HashDigits uint
 
+	DBFolderName string
 	DBName string
 	BucketName string
 	LastHashKey string
+
+	RootCmd string
+	RootShort string
+	RootLong string
 )
 
 
@@ -25,6 +30,7 @@ func init()  {
 	LoadBlockChainConfig(file)
 	LoadConsensus(file)
 	LoadDataBase(file)
+	LoadCmdConfig(file)
 }
 
 func LoadBlockChainConfig(file *ini.File)  {
@@ -37,7 +43,14 @@ func LoadConsensus(file *ini.File)  {
 }
 
 func LoadDataBase(file *ini.File)  {
+	DBFolderName = file.Section("database").Key("DBFolderName").MustString("database")
 	DBName = file.Section("database").Key("DBName").MustString("simpleCoin")
 	BucketName = file.Section("database").Key("BucketName").MustString("simpleBucket")
 	LastHashKey = file.Section("database").Key("LastHashKey").MustString("LastHash")
+}
+
+func LoadCmdConfig(file *ini.File)  {
+	RootCmd = file.Section("cmd").Key("RootCmd").MustString("btc")
+	RootShort = file.Section("cmd").Key("RootShort").MustString("Simple bitcoin by gump")
+	RootLong = file.Section("cmd").Key("RootLong").MustString("Simple bitcoin by gump")
 }

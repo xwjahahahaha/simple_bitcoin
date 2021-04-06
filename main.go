@@ -1,22 +1,24 @@
 package main
 
-import (
-	"simple_bitcoin/BLC"
-)
-
+import "simple_bitcoin/cmd"
 func main() {
 
-	blockChain := BLC.CreateNewBC()
-	defer blockChain.DB.Close()
-	//fmt.Println(newBlockChain)
-	//fmt.Println(newBlockChain.Blocks)
-	//fmt.Println(newBlockChain.Blocks[0])
+	//BlockChain := blc.CreateBlockchainDB("xwj")
+	////
+	////
+	//defer BlockChain.DB.Close()
+
+	//bc := blc.NewBlockchain("x1wj")
+	//fmt.Printf("%x\n", bc.LastHash)
+
 
 
 	//添加新区块
-	blockChain.AddNewBlock("a send $1 to b")
-	blockChain.AddNewBlock("a send $2 to b")
-	blockChain.AddNewBlock("a send $3 to b")
+	//BlockChain.AddNewBlock("a send $1 to b")
+	//BlockChain.AddNewBlock("a send $2 to b")
+	//BlockChain.AddNewBlock("a send $3 to b")
+	//fmt.Printf("本区块Hash值: %x\n", BlockChain.LastHash)
 
-	blockChain.PrintBlockChain()
+	//BlockChain.PrintBlockChain()
+	cmd.Execute()
 }
