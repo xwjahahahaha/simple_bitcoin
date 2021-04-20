@@ -21,6 +21,10 @@ var (
 	RootLong string
 
 	CoinBaseReward uint
+
+
+	PubKeyVersion string
+	AddressCheckSumLen int  // 截取校验和Hash后字节数
 )
 
 
@@ -34,6 +38,7 @@ func init()  {
 	LoadDataBase(file)
 	LoadCmdConfig(file)
 	LoadTransaction(file)
+	loadEncrypto(file)
 }
 
 func LoadBlockChainConfig(file *ini.File)  {
@@ -60,4 +65,9 @@ func LoadCmdConfig(file *ini.File)  {
 
 func LoadTransaction(file *ini.File)  {
 	CoinBaseReward = file.Section("tx").Key("CoinBaseReward").MustUint(10)
+}
+
+func loadEncrypto(file *ini.File)  {
+	PubKeyVersion = file.Section("encrypto").Key("PubKeyVersion").MustString("1.0")
+	AddressCheckSumLen = file.Section("encrypto").Key("AddressCheckSumLen").MustInt(4)
 }

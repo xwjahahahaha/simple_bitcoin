@@ -187,7 +187,7 @@ func (bc *BlockChain) FindUnspentTransactions(address string) (txs []*Transactio
 					continue skip
 				}
 				// 不存在的话检查是否可以解锁（是否为本人）
-				if output.CanUnlockedWith(address) {
+				if output.CanBeUnlockedWith(address) {
 					// 是，则添加到结果集
 					txs = append(txs, tx)
 				}
@@ -217,7 +217,7 @@ func (bc *BlockChain) FindUTXO(address string) (outputs []*TxOutput) {
 	UtxoTxs := bc.FindUnspentTransactions(address)
 	for _, tx := range UtxoTxs {
 		for _, output := range tx.VOut {
-			if output.CanUnlockedWith(address){
+			if output.CanBeUnlockedWith(address){
 				outputs = append(outputs, output)
 			}
 		}
@@ -234,7 +234,7 @@ func (bc *BlockChain) FindSpendableOutputs(address string, expectAmount int) (ma
 	out:
 	for _, tx := range txs {
 		for outputIdx, output := range tx.VOut {
-			if output.CanUnlockedWith(address) && cumulativePrice < expectAmount {
+			if output.CanBeUnlockedWith(address) && cumulativePrice < expectAmount {
 				cumulativePrice += output.Value
 				res[string(tx.TxHash)] = append(res[string(tx.TxHash)], outputIdx)
 				if cumulativePrice >= expectAmount {

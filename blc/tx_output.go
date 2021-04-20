@@ -9,10 +9,7 @@ type TxOutput struct {
 
 
 // 验证输出是否可解锁
-func (out *TxOutput) CanUnlockedWith(unlockingData string) bool {
+func (out *TxOutput) CanBeUnlockedWith(unlockingData string) bool {
 	// TODO  复杂的判断（属性密码？）
-	if out.ScriptPubKey == unlockingData {
-		return true
-	}
-	return false
+	return  out.ScriptPubKey == unlockingData
 }

@@ -26,9 +26,8 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	// 创建输入与输出
 	txInput := &TxInput{
 		OutputTxHash: INITIALLY_HASH,
-		OutputIdx:    -1,		// 没有前置Hash
-		Signature:    nil,
-		PubKey:       []byte(data),		// coinBase值
+		OutputIdx:    -1,				// 没有前置Hash
+		Signature:    data, 	// coinBase值
 	}
 	txOutput := &TxOutput{
 		Value:        int(utils.CoinBaseReward),
@@ -70,8 +69,7 @@ func NewTransaction(from, to string, amount int, bc *BlockChain) *Transaction {
 			newInput := &TxInput{
 				OutputTxHash: []byte(txHash),
 				OutputIdx:    outputIdx,
-				Signature:    nil,
-				PubKey:       nil,
+				Signature:    "",
 			}
 			inputs = append(inputs, newInput)
 		}

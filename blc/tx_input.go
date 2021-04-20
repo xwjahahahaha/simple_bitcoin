@@ -5,10 +5,11 @@ type TxInput struct {
 	OutputTxHash []byte
 	OutputIdx int
 	// 签名与公钥
-	Signature []byte
-	PubKey []byte
+	Signature string
 }
 
-//func (txInput *TxInput) String() string {
-//
-//}
+// 输入锁定方法
+func (in *TxInput) CanUnlockedWith(unlockingData string) bool {
+	// TODO 简单的锁定方法
+	return in.Signature == unlockingData
+}
