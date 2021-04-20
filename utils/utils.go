@@ -18,3 +18,12 @@ func Int64ToBytes(num int64) []byte {
 	return buff.Bytes()
 }
 
+//字节转换成整形
+func BytesToInt(b []byte) int {
+	bytesBuffer := bytes.NewBuffer(b)
+	var x int64
+	binary.Read(bytesBuffer, binary.BigEndian, &x)
+
+	return int(x)
+}
+

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -16,7 +17,7 @@ type Block struct {
 	//2.上一个区块hash
 	PreHash []byte
 	//3.交易数据
-	Data []byte
+	Transactions []*Transaction
 	//4.时间戳
 	Timestamp int64
 	//5.本区块的Hash
@@ -26,11 +27,11 @@ type Block struct {
 }
 
 //创建新的区块
-func NewBlock(data string, height int64, preHash []byte) *Block {
+func NewBlock(transaction []*Transaction, height int64, preHash []byte) *Block {
 	newBlock := &Block{
 		BlockHeight: height,
 		PreHash:     preHash,
-		Data:        []byte(data),
+		Transactions: transaction,
 		Timestamp:   time.Now().Unix(),
 		Hash:        nil,
 		Nonce:  	 0,
@@ -47,8 +48,8 @@ func NewBlock(data string, height int64, preHash []byte) *Block {
 }
 
 // 生成创世区块
-func CreateGenesisBlcok(data string) *Block {
-	return NewBlock(data, 0, INITIALLY_HASH)
+func CreateGenesisBlcok(coinBase *Transaction, height int64) *Block {
+	return NewBlock([]*Transaction{coinBase}, height, INITIALLY_HASH)
 }
 
 
@@ -75,16 +76,28 @@ func Deserialization(blockBytes []byte) *Block {
 }
 
 // 区块信息打印
-func (block *Block)BlockChainStdOutPrint()  {
-	// 输出，这里只是标准stdout，可以改为其他输出
-	fmt.Printf("================================================================================================\n")
-	fmt.Printf("区块高度: %d\n", block.BlockHeight)
-	fmt.Printf("前区块hash值：%x\n", block.PreHash)
-	fmt.Printf("本区块Hash值: %x\n", block.Hash)
-	fmt.Printf("区块数据：%s\n", block.Data)
+func (block *Block) String() string {
+	var lines []string
+	lines = append(lines, fmt.Sprintf("================================================================================================\n"))
+	lines = append(lines, fmt.Sprintf("区块高度: %d\n", block.BlockHeight))
+	lines = append(lines, fmt.Sprintf("前区块hash值：%x\n", block.PreHash))
+	lines = append(lines, fmt.Sprintf("本区块Hash值: %x\n", block.Hash))
+	for _, tx := range block.Transactions {
+		lines = append(lines, fmt.Sprintln("交易数据：\n", tx))
+	}
 	//转换下时间
 	timeFormat := time.Unix(block.Timestamp, 0).Format("2006-01-02 15:04:05")
-	fmt.Printf("本区块时间：%s\n", timeFormat)
-	fmt.Printf("本区块随机数Nonce：%d\n", block.Nonce)
-	fmt.Printf("================================================================================================\n")
+	lines = append(lines, fmt.Sprintf("本区块时间：%s\n", timeFormat))
+	lines = append(lines, fmt.Sprintf("本区块随机数Nonce：%d\n", block.Nonce))
+	lines = append(lines, fmt.Sprintf("================================================================================================\n"))
+	return strings.Join(lines, "\n")
+}
+
+// 序列化区块所有的交易（方便计算区块Hash以及Nonce）
+func (block *Block) SerializeAllTxs() []byte {
+	var res []byte
+	for _, tx := range block.Transactions {
+		res = append(res , tx.Serialize()...)
+	}
+	return res
 }

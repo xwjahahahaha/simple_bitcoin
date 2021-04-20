@@ -9,8 +9,8 @@ import (
 )
 
 type ProofOfWork struct {
-	Block *Block		// 当前要验证的区块
-	Target *big.Int		// 区块的目标hash值(不能大于该值)
+	Block *Block    // 当前要验证的区块
+	Target *big.Int // 区块的目标hash值(不能大于该值)
 }
 
 //创建pow对象
@@ -56,20 +56,19 @@ func (pow *ProofOfWork) Run() (int64, []byte) {
 func (pow *ProofOfWork) PrepareData() []byte {
 	return bytes.Join(
 		[][]byte{
-			utils.Int64ToBytes(pow.Block.BlockHeight),
+		utils.Int64ToBytes(pow.Block.BlockHeight),
 		pow.Block.PreHash,
-		pow.Block.Data,
-			utils.Int64ToBytes(pow.Block.Timestamp),
+		pow.Block.SerializeAllTxs(),	// 序列化所有的交易
+		utils.Int64ToBytes(pow.Block.Timestamp),
 		pow.Target.Bytes(),				// 当前区块难度
 	},
 		[]byte{},
 	)
 }
 
-
 // PoW验证函数
 // 验证目标区块是够合法（难度与区块的比对）
-func (pow *ProofOfWork) IsValid() bool {
+func (pow *ProofOfWork) IsValidate() bool {
 	// 转换区块Hash为big.Int
 	blockHash := new(big.Int)
 	blockHash.SetBytes(pow.Block.Hash)

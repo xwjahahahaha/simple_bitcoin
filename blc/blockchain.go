@@ -7,9 +7,6 @@ import (
 	"os"
 	"simple_bitcoin/utils"
 )
-
-var blockHeightCount int64
-
 //区块链数据结构
 type BlockChain struct {
 	//所有的区块
@@ -18,7 +15,8 @@ type BlockChain struct {
 }
 
 // 生成区块链并持久化存储
-func CreateBlockchainDB(nodeID string) *BlockChain  {
+// addresss 接受创世块奖励
+func CreateBlockchainDB(address, nodeID string) *BlockChain {
 	// 拼接数据库文件名字符串
 	dbName := utils.DBName + "_" + nodeID + ".db"
 	// 检查该文件是否已存在
@@ -27,8 +25,11 @@ func CreateBlockchainDB(nodeID string) *BlockChain  {
 		fmt.Println(dbName, " Blockchain already exists.")
 		os.Exit(1)
 	}
+	// 创建创世交易
+	genesisTx := NewCoinbaseTX(address, utils.GenesisCoinbaseData)
 	// 创建创世区块
-	GenesisBlock := CreateGenesisBlcok(utils.GenesisCoinbaseData)
+	// 初始化区块高度
+	GenesisBlock := CreateGenesisBlcok(genesisTx, 0)
 	// 打开数据库，如果文件不存在会自动创建
 	db, err := bolt.Open(dbName, 0666, nil)
 	if err != nil {
@@ -49,6 +50,11 @@ func CreateBlockchainDB(nodeID string) *BlockChain  {
 		if putErr != nil {
 			log.Panic(putErr)
 		}
+		// 存储区块高度
+		//err := bucket.Put([]byte(utils.BlockHeightKey), utils.Int64ToBytes(0))
+		//if err != nil {
+		//	log.Panic(err)
+		//}
 		return nil
 	})
 	if err != nil {
@@ -95,16 +101,22 @@ func NewBlockchain(nodeID string) *BlockChain {
 }
 
 // 区块链中添加新的区块
-func (bc *BlockChain) AddNewBlock(data string)  {
+func (bc *BlockChain) AddNewBlock(txs []*Transaction)  {
 	var err error
-	blockHeightCount ++
 	//计算新区块数据
-	newHeight, preHash := blockHeightCount,	bc.LastHash
-	//生成新区块
-	newBlock := NewBlock(data, newHeight, preHash)
+	preHash :=  bc.LastHash
 	//加入区块链
 	err = bc.DB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(utils.BucketName))
+		// 更新区块高度
+		heightByte := bucket.Get([]byte(utils.BlockHeightKey))
+		height := int64(utils.BytesToInt(heightByte) + 1)			// 高度+1
+		err := bucket.Put([]byte(utils.BlockHeightKey), utils.Int64ToBytes(height))
+		if err != nil {
+			log.Panic(err)
+		}
+		// 生成新区块
+		newBlock := NewBlock(txs, height, preHash)
 		// 存储新区块
 		err = bucket.Put(newBlock.Hash, newBlock.Serialization())
 		if err != nil {
@@ -115,7 +127,7 @@ func (bc *BlockChain) AddNewBlock(data string)  {
 		if err != nil {
 			log.Panic(err)
 		}
-		// 更新区块链记录的lastHash
+		// 更新区块链记录的lastHash和高度
 		bc.LastHash = newBlock.Hash
 		return nil
 	})
@@ -132,7 +144,7 @@ func (bc *BlockChain) PrintBlockChain()  {
 	}
 	block := iterator.Next()
 	for block != nil {
-		block.BlockChainStdOutPrint()
+		fmt.Println(block)
 		block = iterator.Next()
 	}
 }
@@ -145,3 +157,93 @@ func dbExists(dbFile string) bool {
 	}
 	return true
 }
+
+// 创建区块链迭代器
+func (bc *BlockChain) NewIterator() *BlockChainIterator {
+	return &BlockChainIterator{
+		currentHash: bc.LastHash,
+		db:          bc.DB,
+	}
+}
+
+
+// FindUnspentTransactions 找到所有未花费输出的交易
+// 遍历所有区块，每个区块的所有交易，每个交易的所有输出，如果输出的对象是本人那么就记录该交易
+func (bc *BlockChain) FindUnspentTransactions(address string) (txs []*Transaction) {
+	// 标记数组，当遍历到单个交易时，其中的所有输入对应的上一个交易的输出都要排除掉
+	// map: 交易Hash => output编号map(使用map而不用数组是为了不遍历)
+	tapMap := make(map[string]map[int]bool, 0)
+	bci := bc.NewIterator()
+	block := bci.Next()
+	// 遍历区块
+	for block != nil {
+		// 遍历区块中的交易
+		for _, tx := range block.Transactions{
+			// 遍历交易中的VOut,加入结果
+			skip:
+			for outputIdx, output := range tx.VOut {
+				if _, has := tapMap[string(tx.TxHash)][outputIdx]; has{
+					// 遍历其中的output标号数组，有的话直接结束
+					continue skip
+				}
+				// 不存在的话检查是否可以解锁（是否为本人）
+				if output.CanUnlockedWith(address) {
+					// 是，则添加到结果集
+					txs = append(txs, tx)
+				}
+			}
+			// 遍历Vin，打标记，优化遍历
+			// 先排除coinbase交易，前面没有输出了，不需要标记
+			if tx.IsCoinbase() {
+				continue
+			}
+			for _, input := range tx.Vin {
+				if outputMap, has := tapMap[string(input.OutputTxHash)]; has {
+					outputMap[input.OutputIdx] = true
+				}else{
+					newMap := make(map[int]bool)
+					newMap[input.OutputIdx] = true
+					tapMap[string(input.OutputTxHash)] = newMap
+				}
+			}
+		}
+		block = bci.Next()
+	}
+	return
+}
+
+// 找到所有的UTXO
+func (bc *BlockChain) FindUTXO(address string) (outputs []*TxOutput) {
+	UtxoTxs := bc.FindUnspentTransactions(address)
+	for _, tx := range UtxoTxs {
+		for _, output := range tx.VOut {
+			if output.CanUnlockedWith(address){
+				outputs = append(outputs, output)
+			}
+		}
+	}
+	return
+}
+
+// 获取对应地址满足金额的UTXO集合
+func (bc *BlockChain) FindSpendableOutputs(address string, expectAmount int) (map[string][]int, int) {
+	// 获取当前人的所有UTXO集合
+	txs := bc.FindUnspentTransactions(address)
+	res := make(map[string][]int)
+	cumulativePrice := 0
+	out:
+	for _, tx := range txs {
+		for outputIdx, output := range tx.VOut {
+			if output.CanUnlockedWith(address) && cumulativePrice < expectAmount {
+				cumulativePrice += output.Value
+				res[string(tx.TxHash)] = append(res[string(tx.TxHash)], outputIdx)
+				if cumulativePrice >= expectAmount {
+					break out
+				}
+			}
+		}
+
+	}
+	return res, cumulativePrice
+}
+
