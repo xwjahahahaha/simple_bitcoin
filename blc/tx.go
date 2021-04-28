@@ -2,6 +2,7 @@ package blc
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
@@ -27,12 +28,14 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	txInput := &TxInput{
 		OutputTxHash: INITIALLY_HASH,
 		OutputIdx:    -1,				// 没有前置Hash
-		Signature:    data, 	// coinBase值
+		Signature:    nil, 	// coinBase值
+		PubKey: 		[]byte(data),
 	}
 	txOutput := &TxOutput{
 		Value:        int(utils.CoinBaseReward),
-		ScriptPubKey: to,
+		PubKeyHash: 	[]byte(to),
 	}
+
 	// 创建genesis交易
 	newTx :=  &Transaction{
 		TxHash:    nil,
@@ -45,17 +48,27 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // 一般交易
-func NewTransaction(from, to string, amount int, bc *BlockChain) *Transaction {
+func NewTransaction(from, to string,  amount int, bc *BlockChain) *Transaction {
 	var inputs []*TxInput
 	var outputs []*TxOutput
 
-	if len(from) == 0 || len(to) == 0 || amount < 0 {
+	if len(from)==0 || len(to) == 0 || amount < 0 {
 		log.Panic("参数错误")
 		return nil
 	}
 
+	// 读取本地钱包
+	wallets, err := NewWallets()
+	if err != nil {
+		log.Panic(err)
+	}
+	// 获取from对应的wallet
+	formWallet := wallets.GetWallet(from)
+	// 获取from的公钥Hash
+	pubKeyHash := HashPubKey(formWallet.Publickey)
+
 	// 获取当前能支付的金额
-	outputsDesc, acc :=  bc.FindSpendableOutputs(from, amount)
+	outputsDesc, acc :=  bc.FindSpendableOutputs(pubKeyHash, amount)  // TODO FindSpendableOutputs
 
 	if acc < amount {
 		log.Panic("余额不足")
@@ -69,22 +82,17 @@ func NewTransaction(from, to string, amount int, bc *BlockChain) *Transaction {
 			newInput := &TxInput{
 				OutputTxHash: []byte(txHash),
 				OutputIdx:    outputIdx,
-				Signature:    "",
+				Signature:    nil,
+				PubKey:		  formWallet.Publickey,			// 将form的公钥赋值
 			}
 			inputs = append(inputs, newInput)
 		}
 	}
 	// 创建输出
-	outputs = append(outputs, &TxOutput{
-		Value:        amount,
-		ScriptPubKey: to,
-	})
+	outputs = append(outputs, NewTxOutput(amount, to))
 	// 找零(如果有的话)
 	if acc > amount {
-		outputs = append(outputs, &TxOutput{
-			Value:        acc - amount,
-			ScriptPubKey: from,
-		})
+		outputs = append(outputs,NewTxOutput(acc - amount, from))
 	}
 	// 创建交易
 	tx := &Transaction{
@@ -119,7 +127,6 @@ func Deserialize(Txbytes []byte) *Transaction {
 	return &t
 }
 
-
 // 计算交易Hash
 func (t *Transaction) SetHash() {
 	t.TxHash = []byte{}
@@ -151,4 +158,20 @@ func (t *Transaction) String() string {
 	}
 	lines = append(lines, fmt.Sprintf("      交易时间 : %s\n", time.Unix(t.Timestamp, 0).Format("2006-01-02 15:04:05")))
 	return strings.Join(lines, "")
+}
+
+/**
+ * @Description:	对当前交易签名
+ * @receiver t
+ * @param preTxs	input相关前缀交易集
+ * @param priKey	签名者私钥
+ */
+
+// TODO
+func (t *Transaction) Sign(preTxs map[string]*Transaction, priKey ecdsa.PrivateKey)  {
+
+}
+
+func (t *Transaction) Verify(preTxs map[string]*Transaction) bool {
+	return false
 }

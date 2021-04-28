@@ -1,11 +1,12 @@
 package blc
 
 import (
-	"crypto"
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"golang.org/x/crypto/ripemd160"
 	"log"
 	"simple_bitcoin/utils"
 )
@@ -16,10 +17,6 @@ type Wallet struct {
 	Publickey []byte
 }
 
-// 多个钱包
-type Wallets struct {
-	Wallets Wallet
-}
 
 // 新建一个钱包
 func NewWallet() *Wallet {
@@ -53,11 +50,12 @@ func (w Wallet) GetAddress() []byte {
 	return address
 }
 
+// 对公钥先SHA256再RIPEMD160
 func HashPubKey(pubKey []byte) []byte {
 	// 先sha256再RIPEMD160加密
 	pubKeySha256 := sha256.Sum256(pubKey)
 	// 创建RIPEMD160
-	RIPEMD160Hasher := crypto.RIPEMD160.New()
+	RIPEMD160Hasher := ripemd160.New()			// 注意这里用golang.org/x/crypto/ripemd160包下的ripemd160
 	_, err := RIPEMD160Hasher.Write(pubKeySha256[:])
 	if err != nil {
 		log.Panic(err)
@@ -65,8 +63,44 @@ func HashPubKey(pubKey []byte) []byte {
 	return RIPEMD160Hasher.Sum(nil)
 }
 
+/**
+ * @Description:  计算checkSum
+ * @param payload
+ * @return []byte
+ */
 func checksum(payload []byte) []byte {
 	first := sha256.Sum256(payload)
 	second := sha256.Sum256(first[:])
 	return second[:utils.AddressCheckSumLen]	// 截取hash后AddressCheckSumLen个字节
+}
+
+
+/**
+ * @Description: 通过checksum验证地址是否有效（符合生成规则checksum而不是随机乱码）
+ * @param address
+ * @return bool
+ */
+func ValidateAddress(address string) bool  {
+	// 1. base58解码
+	pubKeyHash := Base58Decode([]byte(address))
+	// 2. 获取checkSum和pubHashKey部分
+	prefixLoad, actualChecksum := pubKeyHash[1:len(pubKeyHash)-utils.AddressCheckSumLen], pubKeyHash[len(pubKeyHash)-utils.AddressCheckSumLen:]
+	// 3. 计算sum
+	nowChecksum := checksum(prefixLoad)
+	return bytes.Compare(nowChecksum, actualChecksum) == 0
+}
+
+/**
+ * @Description:  解析地址为PubKeyHash
+ * @param address
+ * @return []byte
+ */
+func ResolveAddressToPubKeyHash(address string) []byte {
+	if ! ValidateAddress(address) {
+		log.Panic("InValid Address")
+		return nil
+	}
+	// base58解码
+	pubKeyHash := Base58Decode([]byte(address))
+	return pubKeyHash[1:len(pubKeyHash)-utils.AddressCheckSumLen]
 }

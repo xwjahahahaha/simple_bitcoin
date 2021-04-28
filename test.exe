@@ -1,22 +1,22 @@
 echo "创建区块链01，账户xwj"
-./btc createBC xwj 01
+./btc createBC 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 01
 echo "打印区块数据"
 ./btc printBC 01
 echo "xwj账户余额"
-./btc getBalance xwj 01
+./btc getBalance 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 01
 echo "xwj向hxy转账3元"
-./btc send xwj hxy 3 01
+./btc send 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 17eXQMYLJiVTqsCJkmea857iqLXUSyeQswLHLU 3 01
 echo "xwj向hxy转账2元"
-./btc send xwj hxy 2 01
+./btc send 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 17eXQMYLJiVTqsCJkmea857iqLXUSyeQswLHLU 2 01
 echo "hxy向xwj转账1元"
-./btc send hxy xwj 1 01
+./btc send 17eXQMYLJiVTqsCJkmea857iqLXUSyeQswLHLU 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 1 01
 echo "hxy向wjl转账3元"
-./btc send hxy wjl 3 01
+./btc send 17eXQMYLJiVTqsCJkmea857iqLXUSyeQswLHLU 17eXQHyAJmHv2vbwwzUTSMerBSAoQ3y3jJ5KBG 3 01
 echo "wjl向xwj转账1元"
-./btc send wjl xwj 1 01
+./btc send 17eXQHyAJmHv2vbwwzUTSMerBSAoQ3y3jJ5KBG 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 1 01
 echo "余额查询"
-./btc getBalance xwj 01
-./btc getBalance hxy 01
-./btc getBalance wjl 01
+./btc getBalance 17eXQMU4cr4VQAmFcUBKCjj3WuvKaHFNrQMAQc 01
+./btc getBalance 17eXQMYLJiVTqsCJkmea857iqLXUSyeQswLHLU 01
+./btc getBalance 17eXQHyAJmHv2vbwwzUTSMerBSAoQ3y3jJ5KBG 01
 echo "区块链打印"
 ./btc printBC 01

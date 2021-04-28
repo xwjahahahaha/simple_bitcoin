@@ -21,10 +21,13 @@ var (
 	RootLong string
 
 	CoinBaseReward uint
+	WalletsFileName string
 
 
 	PubKeyVersion string
 	AddressCheckSumLen int  // 截取校验和Hash后字节数
+
+
 )
 
 
@@ -65,6 +68,7 @@ func LoadCmdConfig(file *ini.File)  {
 
 func LoadTransaction(file *ini.File)  {
 	CoinBaseReward = file.Section("tx").Key("CoinBaseReward").MustUint(10)
+	WalletsFileName = file.Section("tx").Key("WalletsFileName").MustString("wallets.dat")
 }
 
 func loadEncrypto(file *ini.File)  {

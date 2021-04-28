@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"simple_bitcoin/blc"
@@ -8,7 +9,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(CreateBlockChain, BlockChainPrint, Send, GetBalance)
+	rootCmd.AddCommand(CreateBlockChain, BlockChainPrint, Send, GetBalance, CreateWallet)
 }
 
 // 创建区块链
@@ -64,15 +65,41 @@ var GetBalance = &cobra.Command{
 	Short: "get your balance",
 	Long: "get your balance",
 	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// 获取cli参数
 		address, nodeID := args[0], args[1]
+		// 验证地址
+		if !blc.ValidateAddress(address) {
+			return errors.New("Not a valid address")
+		}
+		// 加载区块链
 		bc := blc.NewBlockchain(nodeID)
 		defer bc.DB.Close()
-		outputs := bc.FindUTXO(address)
+		outputs := bc.FindUTXO(blc.ResolveAddressToPubKeyHash(address))
 		amount := 0
 		for _, output := range outputs {
 			amount += output.Value
 		}
 		fmt.Println("----[", address, "]的余额为：", amount)
+		return nil
+	},
+}
+
+/**
+ * @Description:  创建钱包
+ */
+var CreateWallet = &cobra.Command{
+	Use: "createWallet",
+	Short: "create a wallet",
+	Long: "create a wallet",
+	Args: cobra.ExactArgs(0),
+	RunE: func(cmd *cobra.Command, args []string) error{
+		wallets, _ := blc.NewWallets()
+		// 创建公私钥对,返回对应的地址
+		address := wallets.CreateWallet()
+		// 保存到静态文件中
+		wallets.SaveToFile()
+		fmt.Println("Your new address : ", address)
+		return nil
 	},
 }
