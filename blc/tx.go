@@ -33,7 +33,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	}
 	txOutput := &TxOutput{
 		Value:        int(utils.CoinBaseReward),
-		PubKeyHash: 	[]byte(to),
+		PubKeyHash: 	ResolveAddressToPubKeyHash(to),
 	}
 
 	// 创建genesis交易

@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"golang.org/x/crypto/ripemd160"
 	"log"
 	"simple_bitcoin/utils"
@@ -43,9 +44,12 @@ func newKeyPair() (ecdsa.PrivateKey, []byte) {
 // 获取钱包地址
 func (w Wallet) GetAddress() []byte {
 	publicSHA256 := HashPubKey(w.Publickey)
-	versionedPayload := append([]byte(utils.PubKeyVersion), publicSHA256...)
+	fmt.Printf("生成地址时的hashpubKey: %x\n", publicSHA256)
+	versionByte := utils.Int64ToBytes(int64(utils.PubKeyVersion))
+	versionedPayload := append(versionByte[len(versionByte)-1:], publicSHA256...)
 	checkSum := checksum(versionedPayload)
 	fullPayload := append(versionedPayload, checkSum...)
+	//fmt.Printf("fullPayload = %x\n", fullPayload)
 	address := Base58Encode(fullPayload)
 	return address
 }
@@ -84,9 +88,11 @@ func ValidateAddress(address string) bool  {
 	// 1. base58解码
 	pubKeyHash := Base58Decode([]byte(address))
 	// 2. 获取checkSum和pubHashKey部分
+	// prefixLoad [1:] 是去掉Base58 Decode前面添加的一个字节0
 	prefixLoad, actualChecksum := pubKeyHash[1:len(pubKeyHash)-utils.AddressCheckSumLen], pubKeyHash[len(pubKeyHash)-utils.AddressCheckSumLen:]
 	// 3. 计算sum
 	nowChecksum := checksum(prefixLoad)
+	//fmt.Printf("prefixLoad : %x\n ", prefixLoad)
 	return bytes.Compare(nowChecksum, actualChecksum) == 0
 }
 
@@ -102,5 +108,6 @@ func ResolveAddressToPubKeyHash(address string) []byte {
 	}
 	// base58解码
 	pubKeyHash := Base58Decode([]byte(address))
-	return pubKeyHash[1:len(pubKeyHash)-utils.AddressCheckSumLen]
+	// 2byte 是因为 1byte由Decode造成前面1byte的0，剩下1byte是version
+	return pubKeyHash[2:len(pubKeyHash)-utils.AddressCheckSumLen]
 }

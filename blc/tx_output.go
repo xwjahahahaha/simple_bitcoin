@@ -1,6 +1,11 @@
 package blc
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+	"simple_bitcoin/utils"
+	"strings"
+)
 
 type TxOutput struct {
 	// 值
@@ -14,8 +19,9 @@ func (out *TxOutput) Lock(address []byte){
 	// 1. 将地址解码base58
 	pubKeyHash := Base58Decode(address)
 	// 2. 截取中间段就是PubKeyHash
-	// 前一个byte是version，后四个是checksum
-	pubKeyHash = pubKeyHash[1:len(pubKeyHash)-4]
+	// 前一个是0，后一个byte是version，后四个是checksum
+	pubKeyHash = pubKeyHash[2:len(pubKeyHash)-utils.AddressCheckSumLen]
+	fmt.Printf("address = %s, output pubKeyHash = %x\n", address, pubKeyHash)
 	// 3. 设置
 	out.PubKeyHash = pubKeyHash
 }
@@ -38,4 +44,12 @@ func NewTxOutput(value int, address string) *TxOutput {
 	}
 	newTxout.Lock([]byte(address)) 	// 上锁（地址 => PubkeyHash）
 	return newTxout
+}
+
+
+func (out *TxOutput) String() string {
+	var lines []string
+	lines = append(lines, fmt.Sprintf("Value : %d\n", out.Value))
+	lines = append(lines, fmt.Sprintf("PubKeyHash : %x\n", out.PubKeyHash))
+	return strings.Join(lines, "")
 }

@@ -24,7 +24,7 @@ var (
 	WalletsFileName string
 
 
-	PubKeyVersion string
+	PubKeyVersion int
 	AddressCheckSumLen int  // 截取校验和Hash后字节数
 
 
@@ -72,6 +72,6 @@ func LoadTransaction(file *ini.File)  {
 }
 
 func loadEncrypto(file *ini.File)  {
-	PubKeyVersion = file.Section("encrypto").Key("PubKeyVersion").MustString("1.0")
+	PubKeyVersion = file.Section("encrypto").Key("PubKeyVersion").MustInt(1)
 	AddressCheckSumLen = file.Section("encrypto").Key("AddressCheckSumLen").MustInt(4)
 }
