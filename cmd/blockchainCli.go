@@ -23,7 +23,6 @@ var	CreateBlockChain = &cobra.Command{
 		blc.CreateBlockchainDB(address, nodeID)
 		fmt.Println("Blockchain ID : ", nodeID, " Done!")
 	},
-
 }
 
 // 新增交易
@@ -32,6 +31,7 @@ var Send = &cobra.Command{
 	Short: "add your blockchain block",
 	Long: "add your blockchain block",
 	Args: cobra.ExactArgs(4),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		from, to, nodeID := args[0], args[1], args[3]
 		amount, _ := strconv.Atoi(args[2])

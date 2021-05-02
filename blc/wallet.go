@@ -6,7 +6,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"fmt"
 	"golang.org/x/crypto/ripemd160"
 	"log"
 	"simple_bitcoin/utils"
@@ -44,12 +43,10 @@ func newKeyPair() (ecdsa.PrivateKey, []byte) {
 // 获取钱包地址
 func (w Wallet) GetAddress() []byte {
 	publicSHA256 := HashPubKey(w.Publickey)
-	fmt.Printf("生成地址时的hashpubKey: %x\n", publicSHA256)
 	versionByte := utils.Int64ToBytes(int64(utils.PubKeyVersion))
 	versionedPayload := append(versionByte[len(versionByte)-1:], publicSHA256...)
 	checkSum := checksum(versionedPayload)
 	fullPayload := append(versionedPayload, checkSum...)
-	//fmt.Printf("fullPayload = %x\n", fullPayload)
 	address := Base58Encode(fullPayload)
 	return address
 }

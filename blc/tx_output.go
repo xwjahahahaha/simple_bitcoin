@@ -11,7 +11,7 @@ type TxOutput struct {
 	// 值
 	Value int
 	// 解锁规则
-	PubKeyHash []byte		// 公钥的Hash
+	PubKeyHash []byte		// 此交易收款人公钥的Hash
 }
 
 // 给当前地址的输出上锁（设置PubKeyHash）
@@ -21,7 +21,6 @@ func (out *TxOutput) Lock(address []byte){
 	// 2. 截取中间段就是PubKeyHash
 	// 前一个是0，后一个byte是version，后四个是checksum
 	pubKeyHash = pubKeyHash[2:len(pubKeyHash)-utils.AddressCheckSumLen]
-	fmt.Printf("address = %s, output pubKeyHash = %x\n", address, pubKeyHash)
 	// 3. 设置
 	out.PubKeyHash = pubKeyHash
 }

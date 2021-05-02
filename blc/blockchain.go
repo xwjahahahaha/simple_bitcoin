@@ -106,7 +106,7 @@ func (bc *BlockChain) AddNewBlock(txs []*Transaction)  {
 	preHash :=  bc.LastHash
 	// 验证区块中的所有交易
 	for _, tx := range txs {
-		if ! bc.VerifyTx(tx) {
+		if !bc.VerifyTx(tx) {
 			log.Panic("ERROR: Invalid transaction")
 		}
 	}
@@ -185,11 +185,10 @@ func (bc *BlockChain) FindUnspentTransactions(pubHashKey []byte) (txs []*Transac
 		// 遍历区块中的交易
 		for _, tx := range block.Transactions{
 			// 遍历交易中的VOut,加入结果
-			skip:
 			for outputIdx, output := range tx.VOut {
 				if _, has := tapMap[string(tx.TxHash)][outputIdx]; has{
 					// 遍历其中的output标号数组，有的话直接结束
-					continue skip
+					continue
 				}
 				// 不存在的话检查是否可以解锁（是否为本人）
 				if output.IsLockedWithKey(pubHashKey) {
@@ -197,13 +196,13 @@ func (bc *BlockChain) FindUnspentTransactions(pubHashKey []byte) (txs []*Transac
 					txs = append(txs, tx)
 				}
 			}
-			// 遍历Vin，打标记，优化遍历
+			// 遍历Vin，打标记，用过的就不能用了
 			// 先排除coinbase交易，前面没有输出了，不需要标记
 			if tx.IsCoinbase() {
 				continue
 			}
 			for _, input := range tx.Vin {
-				if outputMap, has := tapMap[string(input.OutputTxHash)]; has {
+				if outputMap, has := tapMap[string(input.OutputTxHash)]; has{
 					outputMap[input.OutputIdx] = true
 				}else{
 					newMap := make(map[int]bool)
@@ -247,7 +246,6 @@ func (bc *BlockChain) FindSpendableOutputs(pubHashKey []byte, expectAmount int) 
 				}
 			}
 		}
-
 	}
 	return res, cumulativePrice
 }

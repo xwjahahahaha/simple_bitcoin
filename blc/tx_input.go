@@ -7,7 +7,7 @@ import (
 )
 
 type TxInput struct {
-	// 与上一个交易相关的参数
+	// 与上一个交易相关的参数，指明交易的来源
 	OutputTxHash []byte
 	OutputIdx int
 	// 签名与公钥
