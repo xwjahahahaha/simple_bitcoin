@@ -16,7 +16,7 @@ type BlockChainIterator struct {
 func (bci *BlockChainIterator) Next() (block *Block) {
 	var err error
 	err = bci.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(utils.BucketName))
+		bucket := tx.Bucket([]byte(utils.BlockBucketName))
 		// 到达创世块停止
 		if string(bci.currentHash) == string(INITIALLY_HASH) {
 			return nil

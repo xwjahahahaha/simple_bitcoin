@@ -52,7 +52,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // 一般交易
-func NewTransaction(from, to string,  amount int, bc *BlockChain) *Transaction {
+func NewTransaction(from, to string,  amount int, UTXOSet *UTXOSet) *Transaction {
 	var inputs []*TxInput
 	var outputs []*TxOutput
 
@@ -72,7 +72,7 @@ func NewTransaction(from, to string,  amount int, bc *BlockChain) *Transaction {
 	pubKeyHash := HashPubKey(formWallet.Publickey)
 
 	// 获取当前能支付的金额
-	outputsDesc, acc :=  bc.FindSpendableOutputs(pubKeyHash, amount)
+	acc, outputsDesc :=  UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
 
 	if acc < amount {
 		log.Panic("余额不足")
@@ -107,7 +107,7 @@ func NewTransaction(from, to string,  amount int, bc *BlockChain) *Transaction {
 	}
 	tx.SetHash()
 	// 签名交易
-	bc.SignTransaction(tx, formWallet.PrivateKey)
+	UTXOSet.Blockchain.SignTransaction(tx, formWallet.PrivateKey)
 	return tx
 }
 

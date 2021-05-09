@@ -20,7 +20,10 @@ var	CreateBlockChain = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		address, nodeID := args[0], args[1]
-		blc.CreateBlockchainDB(address, nodeID)
+		bc := blc.CreateBlockchainDB(address, nodeID)
+		defer bc.DB.Close()
+		UTXOSet := blc.UTXOSet{Blockchain: *bc}		// 创建UTXO集合
+		UTXOSet.Reindex()							// 存储UTXO
 		fmt.Println("Blockchain ID : ", nodeID, " Done!")
 	},
 }
@@ -31,17 +34,21 @@ var Send = &cobra.Command{
 	Short: "add your blockchain block",
 	Long: "add your blockchain block",
 	Args: cobra.ExactArgs(4),
-
 	Run: func(cmd *cobra.Command, args []string) {
 		from, to, nodeID := args[0], args[1], args[3]
 		amount, _ := strconv.Atoi(args[2])
 		// 获取当前区块链数据
 		bc := blc.NewBlockchain(nodeID)
 		defer bc.DB.Close()
+		UTXOSet := blc.UTXOSet{Blockchain: *bc}
 		// 创建交易
-		newTX := blc.NewTransaction(from, to, amount, bc)
+		newTX := blc.NewTransaction(from, to, amount, &UTXOSet)
+		// 铸币交易奖励, 这里的实现就是谁发起交易谁就是矿工，所以有奖励
+		coinBaseTx := blc.NewCoinbaseTX(from, "I got the coinbase!")
 		// 创建区块,添加交易
-		bc.AddNewBlock([]*blc.Transaction{newTX})
+		block := bc.AddNewBlock([]*blc.Transaction{coinBaseTx, newTX})
+		// 更新UTXO
+		UTXOSet.Update(block)
 	},
 }
 
@@ -75,7 +82,8 @@ var GetBalance = &cobra.Command{
 		// 加载区块链
 		bc := blc.NewBlockchain(nodeID)
 		defer bc.DB.Close()
-		outputs := bc.FindUTXO(blc.ResolveAddressToPubKeyHash(address))
+		UTXOSet := blc.UTXOSet{Blockchain: *bc}
+		outputs := UTXOSet.FindUTXO(blc.ResolveAddressToPubKeyHash(address))
 		amount := 0
 		for _, output := range outputs {
 			amount += output.Value

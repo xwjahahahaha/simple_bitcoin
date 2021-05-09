@@ -12,7 +12,8 @@ var (
 	HashDigits uint
 
 	DBName string
-	BucketName string
+	BlockBucketName string
+	UtxoBucketName string
 	LastHashKey string
 	BlockHeightKey string
 
@@ -55,7 +56,8 @@ func LoadConsensus(file *ini.File)  {
 
 func LoadDataBase(file *ini.File)  {
 	DBName = file.Section("database").Key("DBName").MustString("simpleCoin")
-	BucketName = file.Section("database").Key("BucketName").MustString("simpleBucket")
+	BlockBucketName = file.Section("database").Key("BlockBucketName").MustString("simpleBucket")
+	UtxoBucketName = file.Section("database").Key("UtxoBucketName").MustString("chainState")
 	LastHashKey = file.Section("database").Key("LastHashKey").MustString("LastHash")
 	BlockHeightKey = file.Section("database").Key("BlockHeightKey").MustString("BlockHeight")
 }

@@ -40,7 +40,7 @@ func CreateBlockchainDB(address, nodeID string) *BlockChain {
 		log.Panic(err)
 	}
 	err = db.Update(func(tx *bolt.Tx) error {
-		bucket, bucketErr := tx.CreateBucket([]byte(utils.BucketName))
+		bucket, bucketErr := tx.CreateBucket([]byte(utils.BlockBucketName))
 		if bucketErr != nil {
 			log.Panic(bucketErr)
 		}
@@ -84,7 +84,7 @@ func NewBlockchain(nodeID string) *BlockChain {
 	}
 	var lastHash []byte
 	err = db.View(func(tx *bolt.Tx) error {
-		bucket:= tx.Bucket([]byte(utils.BucketName))
+		bucket:= tx.Bucket([]byte(utils.BlockBucketName))
 		// 获取当前数据库最后的hash
 		lastHash = bucket.Get([]byte(utils.LastHashKey))
 		return nil
@@ -100,7 +100,7 @@ func NewBlockchain(nodeID string) *BlockChain {
 }
 
 // 区块链中添加新的区块
-func (bc *BlockChain) AddNewBlock(txs []*Transaction)  {
+func (bc *BlockChain) AddNewBlock(txs []*Transaction) *Block {
 	var err error
 	//计算新区块数据
 	preHash :=  bc.LastHash
@@ -111,8 +111,9 @@ func (bc *BlockChain) AddNewBlock(txs []*Transaction)  {
 		}
 	}
 	//加入区块链
+	var newBlockPoint *Block
 	err = bc.DB.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(utils.BucketName))
+		bucket := tx.Bucket([]byte(utils.BlockBucketName))
 		// 更新区块高度
 		heightByte := bucket.Get([]byte(utils.BlockHeightKey))
 		height := int64(utils.BytesToInt(heightByte) + 1)			// 高度+1
@@ -122,6 +123,7 @@ func (bc *BlockChain) AddNewBlock(txs []*Transaction)  {
 		}
 		// 生成新区块
 		newBlock := NewBlock(txs, height, preHash)
+		newBlockPoint = newBlock
 		// 存储新区块
 		err = bucket.Put(newBlock.Hash, newBlock.Serialization())
 		if err != nil {
@@ -139,6 +141,7 @@ func (bc *BlockChain) AddNewBlock(txs []*Transaction)  {
 	if err != nil {
 		log.Panic(err)
 	}
+	return newBlockPoint
 }
 
 // 输出区块链(stdout打印)
@@ -171,10 +174,13 @@ func (bc *BlockChain) NewIterator() *BlockChainIterator {
 	}
 }
 
-
-// FindUnspentTransactions 找到所有未花费输出的交易
-// 遍历所有区块，每个区块的所有交易，每个交易的所有输出，如果输出的对象是本人那么就记录该交易
-func (bc *BlockChain) FindUnspentTransactions(pubHashKey []byte) (txs []*Transaction) {
+/**
+ * @Description: FindUTXO 遍历迭代区块链，找到所有未花费输出的交易与outputs
+ * @receiver bc
+ * @return map[string]*TxOutputs
+ */
+func (bc *BlockChain) FindUTXO() map[string]*TxOutputs {
+	UTXOs := make(map[string]*TxOutputs)
 	// 标记数组，当遍历到单个交易时，其中的所有输入对应的上一个交易的输出都要排除掉
 	// map: 交易Hash => output编号map(使用map而不用数组是为了不遍历)
 	tapMap := make(map[string]map[int]bool, 0)
@@ -190,11 +196,10 @@ func (bc *BlockChain) FindUnspentTransactions(pubHashKey []byte) (txs []*Transac
 					// 遍历其中的output标号数组，有的话直接结束
 					continue
 				}
-				// 不存在的话检查是否可以解锁（是否为本人）
-				if output.IsLockedWithKey(pubHashKey) {
-					// 是，则添加到结果集
-					txs = append(txs, tx)
-				}
+				// 将所有交易的utxo加入到UTXO结合中
+				outs := TxOutputs{}
+				outs.Outputs = append(outs.Outputs, output)
+				UTXOs[string(tx.TxHash)] = &outs
 			}
 			// 遍历Vin，打标记，用过的就不能用了
 			// 先排除coinbase交易，前面没有输出了，不需要标记
@@ -213,41 +218,7 @@ func (bc *BlockChain) FindUnspentTransactions(pubHashKey []byte) (txs []*Transac
 		}
 		block = bci.Next()
 	}
-	return
-}
-
-// 找到所有的UTXO
-func (bc *BlockChain) FindUTXO(PubKeyHash []byte) (outputs []*TxOutput) {
-	UtxoTxs := bc.FindUnspentTransactions(PubKeyHash)
-	for _, tx := range UtxoTxs {
-		for _, output := range tx.VOut {
-			if output.IsLockedWithKey(PubKeyHash){
-				outputs = append(outputs, output)
-			}
-		}
-	}
-	return
-}
-
-// 获取对应地址满足金额的UTXO集合
-func (bc *BlockChain) FindSpendableOutputs(pubHashKey []byte, expectAmount int) (map[string][]int, int) {
-	// 获取当前人的所有UTXO集合
-	txs := bc.FindUnspentTransactions(pubHashKey)
-	res := make(map[string][]int)
-	cumulativePrice := 0
-	out:
-	for _, tx := range txs {
-		for outputIdx, output := range tx.VOut {
-			if output.IsLockedWithKey(pubHashKey) && cumulativePrice < expectAmount {
-				cumulativePrice += output.Value
-				res[string(tx.TxHash)] = append(res[string(tx.TxHash)], outputIdx)
-				if cumulativePrice >= expectAmount {
-					break out
-				}
-			}
-		}
-	}
-	return res, cumulativePrice
+	return UTXOs
 }
 
 
@@ -298,6 +269,10 @@ func (bc *BlockChain) SignTransaction(tx *Transaction, priKey ecdsa.PrivateKey) 
 
 func (bc *BlockChain) GetPreTx(tx *Transaction) map[string]*Transaction {
 	// 创建前向交易集的映射关系，方便签名
+	// 如果当前交易是coinbase则不用查找前面的交易
+	if tx.IsCoinbase() {
+		return nil
+	}
 	preTxs := make(map[string]*Transaction)
 	for _, input := range tx.Vin {
 		// 查找
