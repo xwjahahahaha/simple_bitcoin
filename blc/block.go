@@ -93,11 +93,16 @@ func (block *Block) String() string {
 	return strings.Join(lines, "\n")
 }
 
-// 序列化区块所有的交易（方便计算区块Hash以及Nonce）
-func (block *Block) SerializeAllTxs() []byte {
-	var res []byte
+/**
+ * @Description: HashTransactions 构建交易的Merkle Tree，获取所有交易的根Hash
+ * @receiver block
+ * @return []byte
+ */
+func (block *Block) HashTransactions() []byte {
+	var txs [][]byte
 	for _, tx := range block.Transactions {
-		res = append(res , tx.Serialize()...)
+		txs = append(txs, tx.Serialize())
 	}
-	return res
+	root := NewMerkleTree(txs)
+	return root.RootNode.Data
 }

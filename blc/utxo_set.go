@@ -13,7 +13,7 @@ type UTXOSet struct {
 }
 
 /**
- * @Description: 使用UTXO找到未花费输出，然后在数据库中进行存储。
+ * @Description: 使用UTXO找到未花费输出，然后在数据库中进行存储。存储的形式：[TxHash] => utxos/outputs
  * @receiver u
  */
 func (u *UTXOSet) Reindex()  {
@@ -111,7 +111,7 @@ func (u *UTXOSet) FindUTXO(pubkeyHash []byte) []*TxOutput {
 }
 
 /**
- * @Description: 当有新的区块生成时，根据区块更新UTXO存储
+ * @Description: 当有新的区块生成时，根据区块更新UTXO存储，为了不重新遍历整条区块链
  * @receiver u
  * @param block
  */
@@ -155,7 +155,6 @@ func (u *UTXOSet) Update(block *Block)  {
 					}
 				}
 			}
-
 
 			// 遍历每个交易的输出，直接添加到数据库
 			outputs := TxOutputs{}

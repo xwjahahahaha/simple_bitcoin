@@ -58,7 +58,7 @@ func (pow *ProofOfWork) PrepareData() []byte {
 		[][]byte{
 		utils.Int64ToBytes(pow.Block.BlockHeight),
 		pow.Block.PreHash,
-		pow.Block.SerializeAllTxs(),	// 序列化所有的交易
+		pow.Block.HashTransactions(),	// 获取交易的Merkle树根
 		utils.Int64ToBytes(pow.Block.Timestamp),
 		pow.Target.Bytes(),				// 当前区块难度
 	},
